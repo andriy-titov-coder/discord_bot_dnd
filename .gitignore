@@ -209,4 +209,4 @@ __marimo__/
 .idea/
 
 # Players data
-players/
+src/database/players/

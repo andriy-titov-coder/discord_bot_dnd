@@ -33,7 +33,7 @@ async def choice_story(interaction: discord.Interaction):
 
 @bot.tree.command(name="stats", description="Переглянути характеристики та інвентар вашого героя")
 async def stats(interaction: discord.Interaction):
-    player_file = get_resource_path(f"players/{interaction.user.id}.json")
+    player_file = get_resource_path(f"src/database/players/{interaction.user.id}.json")
     
     if not os.path.exists(player_file):
         await interaction.response.send_message("У вас ще немає персонажа. Створіть його за допомогою `/choice_story`.", ephemeral=True)

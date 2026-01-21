@@ -34,7 +34,7 @@ class ClassChoiceView(View):
             self.character_data["inventory"] = []
             
             # Зберігаємо дані персонажа
-            players_dir = get_resource_path("players")
+            players_dir = get_resource_path("src/database/players")
             if not os.path.exists(players_dir):
                 os.makedirs(players_dir)
             
