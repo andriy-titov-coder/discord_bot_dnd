@@ -72,36 +72,6 @@ class GenderChoiceView(View):
         await interaction.response.edit_message(content=f"Обрано стать: **{self.character_data['gender']}**. Тепер обери свій клас:", view=view)
 
 
-class StartCreationView(View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @discord.ui.button(label="Створити персонажа", style=discord.ButtonStyle.green)
-    async def start_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_message("Введіть ім'я вашого героя прямо в цей чат:")
-        
-        def check(m):
-            return m.author == interaction.user and m.channel == interaction.channel
-
-        try:
-            # Чекаємо на повідомлення від користувача протягом 60 секунд
-            message = await interaction.client.wait_for('message', check=check, timeout=60.0)
-            name = message.content
-            
-            if len(name) < 2 or len(name) > 32:
-                await interaction.followup.send("Ім'я має бути від 2 до 32 символів. Спробуйте ще раз, натиснувши кнопку знову.", ephemeral=True)
-                return
-
-            character_data = {"name": name}
-            view = GenderChoiceView(character_data)
-            await interaction.followup.send(
-                f"Вітаємо, **{name}**! Оберіть стать вашого героя:",
-                view=view
-            )
-        except Exception as e:
-            # Можна додати обробку таймауту, якщо потрібно
-            pass
-
 class StoryChoiceView(View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -151,9 +121,30 @@ class StoryChoiceView(View):
             
             await channel.send(content=f"Вітаємо, {member.mention}! Ви розпочали історію '{story_label}'.\n\n{intro_text}", files=files)
             
-            # Додаємо кнопку для початку створення персонажа
-            creation_view = StartCreationView()
-            await channel.send("Натисніть кнопку нижче, щоб створити свого персонажа:", view=creation_view)
+            # Одразу просимо ввести ім'я
+            await channel.send("Ви намагаєтесь пригадати як вас звуть:")
+            
+            def check(m):
+                return m.author == member and m.channel == channel
+
+            try:
+                # Чекаємо на повідомлення від користувача протягом 60 секунд
+                message = await interaction.client.wait_for('message', check=check, timeout=60.0)
+                name = message.content
+                
+                if len(name) < 2 or len(name) > 32:
+                    await channel.send("Ім'я має бути від 2 до 32 символів. Спробуйте розпочати заново за допомогою `/choice_story`.")
+                    return
+
+                character_data = {"name": name}
+                view = GenderChoiceView(character_data)
+                await channel.send(
+                    f"Вітаємо, **{name}**! Оберіть стать вашого героя:",
+                    view=view
+                )
+            except Exception as e:
+                # Можна додати обробку таймауту
+                pass
             
         except discord.Forbidden:
             await interaction.response.send_message("У бота немає прав на створення каналів.", ephemeral=True)
