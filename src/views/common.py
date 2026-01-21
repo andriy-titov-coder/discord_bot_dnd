@@ -1,5 +1,5 @@
 import discord
-from discord.ui import View, Select, Modal, TextInput, Button
+from discord.ui import View, Select, Button
 import os
 import json
 
@@ -71,25 +71,6 @@ class GenderChoiceView(View):
         view = ClassChoiceView(self.character_data)
         await interaction.response.edit_message(content=f"Обрано стать: **{self.character_data['gender']}**. Тепер обери свій клас:", view=view)
 
-class CharacterNameModal(Modal):
-    name_input = TextInput(
-        label="Як звати вашого героя?",
-        placeholder="Введіть ім'я...",
-        min_length=2,
-        max_length=32
-    )
-
-    def __init__(self):
-        super().__init__(title="Створення персонажа")
-        self.character_data = {}
-
-    async def on_submit(self, interaction: discord.Interaction):
-        self.character_data["name"] = self.name_input.value
-        view = GenderChoiceView(self.character_data)
-        await interaction.response.send_message(
-            f"Вітаємо, **{self.character_data['name']}**! Оберіть стать вашого героя:",
-            view=view
-        )
 
 class StartCreationView(View):
     def __init__(self):
@@ -97,7 +78,29 @@ class StartCreationView(View):
 
     @discord.ui.button(label="Створити персонажа", style=discord.ButtonStyle.green)
     async def start_button(self, interaction: discord.Interaction, button: Button):
-        await interaction.response.send_modal(CharacterNameModal())
+        await interaction.response.send_message("Введіть ім'я вашого героя прямо в цей чат:")
+        
+        def check(m):
+            return m.author == interaction.user and m.channel == interaction.channel
+
+        try:
+            # Чекаємо на повідомлення від користувача протягом 60 секунд
+            message = await interaction.client.wait_for('message', check=check, timeout=60.0)
+            name = message.content
+            
+            if len(name) < 2 or len(name) > 32:
+                await interaction.followup.send("Ім'я має бути від 2 до 32 символів. Спробуйте ще раз, натиснувши кнопку знову.", ephemeral=True)
+                return
+
+            character_data = {"name": name}
+            view = GenderChoiceView(character_data)
+            await interaction.followup.send(
+                f"Вітаємо, **{name}**! Оберіть стать вашого героя:",
+                view=view
+            )
+        except Exception as e:
+            # Можна додати обробку таймауту, якщо потрібно
+            pass
 
 class StoryChoiceView(View):
     def __init__(self):
