@@ -1,6 +1,7 @@
 import discord
-from discord.ui import View, Select
+from discord.ui import View, Select, Modal, TextInput, Button
 import os
+import json
 
 # Спробуємо імпортувати відносно або через sys.path
 try:
@@ -9,6 +10,94 @@ except ImportError:
     import sys
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from core.resources import load_text_resource, get_resource_path
+
+class ClassChoiceView(View):
+    def __init__(self, character_data):
+        super().__init__(timeout=None)
+        self.character_data = character_data
+
+    async def complete_creation(self, interaction: discord.Interaction, class_key: str):
+        # Завантажуємо дані класу
+        class_path = get_resource_path(f"resources/classes/{class_key}.json")
+        try:
+            with open(class_path, 'r', encoding='utf-8') as f:
+                class_info = json.load(f)
+            
+            self.character_data["class"] = class_info["class_name"]
+            self.character_data["stats"] = class_info
+            
+            summary = (
+                f"🎉 **Створення персонажа завершено!**\n\n"
+                f"**Ім'я:** {self.character_data['name']}\n"
+                f"**Стать:** {self.character_data['gender']}\n"
+                f"**Клас:** {self.character_data['class']}\n\n"
+                f"**Характеристики:**\n"
+                f"❤️ Здоров'я: {class_info['health']}\n"
+                f"⚔️ Сила: {class_info['strength']}\n"
+                f"🏹 Спритність: {class_info['agility']}\n"
+                f"🔮 Магія: {class_info['magic']}\n\n"
+                f"Твоя пригода починається прямо зараз!"
+            )
+            await interaction.response.edit_message(content=summary, view=None)
+        except Exception as e:
+            await interaction.response.send_message(f"Помилка при завантаженні класу: {e}", ephemeral=True)
+
+    @discord.ui.button(label="Воїн", style=discord.ButtonStyle.danger, emoji="⚔️")
+    async def warrior_button(self, interaction: discord.Interaction, button: Button):
+        await self.complete_creation(interaction, "warrior")
+
+    @discord.ui.button(label="Маг", style=discord.ButtonStyle.primary, emoji="🔮")
+    async def mage_button(self, interaction: discord.Interaction, button: Button):
+        await self.complete_creation(interaction, "mage")
+
+    @discord.ui.button(label="Лучник", style=discord.ButtonStyle.success, emoji="🏹")
+    async def archer_button(self, interaction: discord.Interaction, button: Button):
+        await self.complete_creation(interaction, "archer")
+
+class GenderChoiceView(View):
+    def __init__(self, character_data):
+        super().__init__(timeout=None)
+        self.character_data = character_data
+
+    @discord.ui.button(label="Чоловік", style=discord.ButtonStyle.secondary, emoji="👨")
+    async def male_button(self, interaction: discord.Interaction, button: Button):
+        self.character_data["gender"] = "Чоловік"
+        view = ClassChoiceView(self.character_data)
+        await interaction.response.edit_message(content=f"Обрано стать: **{self.character_data['gender']}**. Тепер обери свій клас:", view=view)
+
+    @discord.ui.button(label="Жінка", style=discord.ButtonStyle.secondary, emoji="👩")
+    async def female_button(self, interaction: discord.Interaction, button: Button):
+        self.character_data["gender"] = "Жінка"
+        view = ClassChoiceView(self.character_data)
+        await interaction.response.edit_message(content=f"Обрано стать: **{self.character_data['gender']}**. Тепер обери свій клас:", view=view)
+
+class CharacterNameModal(Modal):
+    name_input = TextInput(
+        label="Як звати вашого героя?",
+        placeholder="Введіть ім'я...",
+        min_length=2,
+        max_length=32
+    )
+
+    def __init__(self):
+        super().__init__(title="Створення персонажа")
+        self.character_data = {}
+
+    async def on_submit(self, interaction: discord.Interaction):
+        self.character_data["name"] = self.name_input.value
+        view = GenderChoiceView(self.character_data)
+        await interaction.response.send_message(
+            f"Вітаємо, **{self.character_data['name']}**! Оберіть стать вашого героя:",
+            view=view
+        )
+
+class StartCreationView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+
+    @discord.ui.button(label="Створити персонажа", style=discord.ButtonStyle.green)
+    async def start_button(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.send_modal(CharacterNameModal())
 
 class StoryChoiceView(View):
     def __init__(self):
@@ -58,6 +147,10 @@ class StoryChoiceView(View):
                 files.append(discord.File(img_path))
             
             await channel.send(content=f"Вітаємо, {member.mention}! Ви розпочали історію '{story_label}'.\n\n{intro_text}", files=files)
+            
+            # Додаємо кнопку для початку створення персонажа
+            creation_view = StartCreationView()
+            await channel.send("Натисніть кнопку нижче, щоб створити свого персонажа:", view=creation_view)
             
         except discord.Forbidden:
             await interaction.response.send_message("У бота немає прав на створення каналів.", ephemeral=True)
