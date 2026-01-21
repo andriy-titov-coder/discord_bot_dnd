@@ -24,8 +24,24 @@ class ClassChoiceView(View):
                 class_info = json.load(f)
             
             self.character_data["class"] = class_info["class_name"]
-            self.character_data["stats"] = class_info
+            self.character_data["stats"] = {
+                "health": class_info["health"],
+                "max_health": class_info["health"],
+                "strength": class_info["strength"],
+                "agility": class_info["agility"],
+                "magic": class_info["magic"]
+            }
+            self.character_data["inventory"] = []
             
+            # Зберігаємо дані персонажа
+            players_dir = get_resource_path("players")
+            if not os.path.exists(players_dir):
+                os.makedirs(players_dir)
+            
+            player_file = os.path.join(players_dir, f"{interaction.user.id}.json")
+            with open(player_file, 'w', encoding='utf-8') as f:
+                json.dump(self.character_data, f, ensure_ascii=False, indent=4)
+
             summary = (
                 f"🎉 **Створення персонажа завершено!**\n\n"
                 f"**Ім'я:** {self.character_data['name']}\n"
@@ -63,13 +79,13 @@ class GenderChoiceView(View):
     async def male_button(self, interaction: discord.Interaction, button: Button):
         self.character_data["gender"] = "Чоловік"
         view = ClassChoiceView(self.character_data)
-        await interaction.response.edit_message(content=f"Обрано стать: **{self.character_data['gender']}**. Тепер обери свій клас:", view=view)
+        await interaction.response.edit_message(content=f"Ви обрали стать: **{self.character_data['gender']}**. Тепер обери свій клас, герой:", view=view)
 
     @discord.ui.button(label="Жінка", style=discord.ButtonStyle.secondary, emoji="👩")
     async def female_button(self, interaction: discord.Interaction, button: Button):
         self.character_data["gender"] = "Жінка"
         view = ClassChoiceView(self.character_data)
-        await interaction.response.edit_message(content=f"Обрано стать: **{self.character_data['gender']}**. Тепер обери свій клас:", view=view)
+        await interaction.response.edit_message(content=f"Ви обрали стать: **{self.character_data['gender']}**. Тепер обери свій клас, героїне:", view=view)
 
 
 class StoryChoiceView(View):
