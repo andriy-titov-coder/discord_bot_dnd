@@ -55,7 +55,7 @@ async def stats(interaction: discord.Interaction):
             title=f"📊 Меню героя: {data['name']}",
             color=discord.Color.blue()
         )
-        embed.add_field(name="👤 Основне", value=f"**Клас:** {data['class']}\n**Стать:** {gender}", inline=False)
+        embed.add_field(name="👤 Основне", value=f"**Клас:** {data['class']}\n**Рівень:** {data.get('level', 1)}\n**Стать:** {gender}", inline=False)
         embed.add_field(name="⚔️ Характеристики", value=(
             f"❤️ HP: {stats.get('health')}/{stats.get('max_health')}\n"
             f"💪 Сила: {stats.get('strength')}\n"

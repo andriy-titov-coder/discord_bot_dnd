@@ -24,6 +24,8 @@ class ClassChoiceView(View):
                 class_info = json.load(f)
             
             self.character_data["class"] = class_info["class_name"]
+            self.character_data["level"] = 1
+            self.character_data["exp"] = 0
             self.character_data["stats"] = {
                 "health": class_info["health"],
                 "max_health": class_info["health"],
@@ -46,7 +48,7 @@ class ClassChoiceView(View):
                 f"🎉 **Створення персонажа завершено!**\n\n"
                 f"**Ім'я:** {self.character_data['name']}\n"
                 f"**Стать:** {self.character_data['gender']}\n"
-                f"**Клас:** {self.character_data['class']}\n\n"
+                f"**Клас:** {self.character_data['class']} (Рівень 1)\n\n"
                 f"**Характеристики:**\n"
                 f"❤️ Здоров'я: {class_info['health']}\n"
                 f"⚔️ Сила: {class_info['strength']}\n"
